@@ -76,9 +76,6 @@ void benchmark_gpu(float* A, float* B, float* C, int iterations) {
     printf("GPU (OpenCL) MAC time (%d iters): %.6f s\n", iterations, t);
     printf("GPU throughput: %.2f GMAC/s\n", gmacs_per_sec);
 
-    t = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
-    printf("GPU (OpenCL) time: %.6f s\n", t);
-
     clReleaseMemObject(bufA);
     clReleaseMemObject(bufB);
     clReleaseMemObject(bufC);
