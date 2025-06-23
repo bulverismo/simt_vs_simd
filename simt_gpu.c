@@ -6,7 +6,7 @@
 #define MAX_SOURCE_SIZE 4096
 #define N (10 * 1000 * 1000)
 
-void benchmark_gpu(float* A, float* B, float* C) {
+void benchmark_gpu(float* A, float* B, float* C, int iterations) {
     char *source_str;
     size_t source_size;
     FILE* fp = fopen("simt_gpu.cl", "r");
@@ -53,10 +53,11 @@ void benchmark_gpu(float* A, float* B, float* C) {
         exit(1);
     }
     
-    kernel = clCreateKernel(program, "vec_add", &ret);
+    kernel = clCreateKernel(program, "mac_kernel", &ret);
     clSetKernelArg(kernel, 0, sizeof(cl_mem), &bufA);
     clSetKernelArg(kernel, 1, sizeof(cl_mem), &bufB);
     clSetKernelArg(kernel, 2, sizeof(cl_mem), &bufC);
+    clSetKernelArg(kernel, 3, sizeof(int), &iterations);
 
     size_t global_size = N;
 
@@ -65,10 +66,17 @@ void benchmark_gpu(float* A, float* B, float* C) {
     ret = clEnqueueNDRangeKernel(queue, kernel, 1, NULL, &global_size, NULL, 0, NULL, NULL);
     clFinish(queue);
     clock_gettime(CLOCK_MONOTONIC, &end);
-
+    
     ret = clEnqueueReadBuffer(queue, bufC, CL_TRUE, 0, N * sizeof(float), C, 0, NULL, NULL);
 
     double t = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
+    double macs = (double)N * iterations;
+    double gmacs_per_sec = macs / (t * 1e9);
+
+    printf("GPU (OpenCL) MAC time (%d iters): %.6f s\n", iterations, t);
+    printf("GPU throughput: %.2f GMAC/s\n", gmacs_per_sec);
+
+    t = (end.tv_sec - start.tv_sec) + (end.tv_nsec - start.tv_nsec) / 1e9;
     printf("GPU (OpenCL) time: %.6f s\n", t);
 
     clReleaseMemObject(bufA);
@@ -90,7 +98,8 @@ int main() {
     }
 
 
-    benchmark_gpu(A, B, C); // ou benchmark_gpu()
+    int iterations = 1000;
+    benchmark_gpu(A, B, C, iterations); // ou benchmark_gpu()
 
     free(A); free(B); free(C);
     return 0;

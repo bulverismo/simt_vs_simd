@@ -1,4 +1,11 @@
-__kernel void vec_add(__global float* A, __global float* B, __global float* C) {
+__kernel void mac_kernel(__global float* A, __global float* B, __global float* C, int iterations) {
     int i = get_global_id(0);
-    C[i] = A[i] + B[i];
+    float c = C[i];
+    float a = A[i];
+    float b = B[i];
+
+    for (int iter = 0; iter < iterations; iter++) {
+        c += a * b;
+    }
+    C[i] = c;
 }
